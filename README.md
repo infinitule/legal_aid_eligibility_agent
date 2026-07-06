@@ -60,6 +60,10 @@ The AI is used **where it adds value and nowhere it could do harm**:
 ## 7. How to Run the Project
 **Prerequisites:** [Ollama](https://ollama.com) installed, and Python 3.
 
+**Easiest — one click:** double-click **`start.command`** (macOS). It starts Ollama with browser access, serves the app, and opens `http://localhost:8000/`. Leave that window open while using the app.
+
+**Manual:**
+
 ```bash
 # 1. Pull at least one model (small default, or the recommended one)
 ollama pull qwen3.5:0.8b       # tiny, ~1 GB  (default)

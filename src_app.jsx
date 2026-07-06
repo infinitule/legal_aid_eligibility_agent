@@ -377,10 +377,7 @@ function LegalAidView() {
   const [forum, setForum] = useState('Other State (default)');
   const [matter, setMatter] = useState('other');
   const [problem, setProblem] = useState('');
-  const [result, setResult] = useState(null);
-  const [checklist, setChecklist] = useState(null);
-  const [guard, setGuard] = useState(null);
-  const [plain, setPlain] = useState('');
+  const [aiPlain, setAiPlain] = useState('');
   const [aiBusy, setAiBusy] = useState(false);
   const [tests, setTests] = useState(null);
   const [logs, setLogs] = useState(() => {
@@ -389,29 +386,39 @@ function LegalAidView() {
 
   const toggleCat = (id) => setCats(p => ({ ...p, [id]: !p[id] }));
 
-  const run = () => {
-    const a = { cats, income: income.trim() === '' ? null : Number(income), forum, matter, problem };
-    const g = guardrailScan(problem);
-    const r = assessEligibility(a);
-    const cl = buildChecklist(a, r);
-    setGuard(g); setResult(r); setChecklist(cl); setPlain(explainPlain(a, r, cl));
+  // Screening derives live from the inputs, so toggling a category or editing
+  // income immediately updates the verdict, checklist and summary — no stale panel.
+  const applicant = useMemo(
+    () => ({ cats, income: income.trim() === '' ? null : Number(income), forum, matter, problem }),
+    [cats, income, forum, matter, problem]
+  );
+  const hasInput = Object.values(cats).some(Boolean) || income.trim() !== '';
+  const guard = useMemo(() => guardrailScan(problem), [problem]);
+  const result = useMemo(() => assessEligibility(applicant), [applicant]);
+  const checklist = useMemo(() => buildChecklist(applicant, result), [applicant, result]);
+  // The model may rephrase the summary; any input change reverts to rule-based text.
+  useEffect(() => { setAiPlain(''); }, [applicant]);
+  const plain = aiPlain || explainPlain(applicant, result, checklist);
 
+  // "Check eligibility" records the current screening to the local log (eval sheet).
+  const logScreening = () => {
     const entry = {
       ts: new Date().toISOString(),
-      forum, income: a.income, matter,
+      forum, income: applicant.income, matter,
       cats: Object.keys(cats).filter(k => cats[k]),
-      status: r.status,
-      provisions: r.provisions.map(p => p.cite),
-      guardBlocked: g.blocked,
+      status: result.status,
+      provisions: result.provisions.map(p => p.cite),
+      guardBlocked: guard.blocked,
     };
     const next = [entry, ...logs].slice(0, 50);
     setLogs(next);
     try { localStorage.setItem(LA_LOG_KEY, JSON.stringify(next)); } catch {}
+    showToast('Screening logged');
   };
 
   const reset = () => {
     setCats({}); setIncome(''); setForum('Other State (default)'); setMatter('other');
-    setProblem(''); setResult(null); setChecklist(null); setGuard(null); setPlain('');
+    setProblem(''); setAiPlain('');
   };
 
   const runTests = () => setTests(LA_SCENARIOS.map(s => {
@@ -429,7 +436,7 @@ function LegalAidView() {
   const clearLogs = () => { setLogs([]); try { localStorage.removeItem(LA_LOG_KEY); } catch {} };
 
   const aiSummary = async () => {
-    if (!result) return;
+    if (!hasInput) return;
     setAiBusy(true);
     const sys = "You are a legal-aid intake assistant for India's NALSA system. Explain eligibility in plain, supportive language at a 6th-grade reading level. You do NOT give legal advice, predict case outcomes, or recommend legal strategy. End by noting that a Legal Services Authority makes the final decision.";
     const facts = `Applicant facts:
@@ -443,10 +450,10 @@ Deterministic eligibility result: ${result.status.toUpperCase()} under ${result.
 Write a short, two-paragraph plain-language explanation of what this means and the next step to apply at the District Legal Services Authority. Do not give legal advice.`;
     try {
       const out = await askModel(facts, sys, 700);
-      setPlain(out);
+      setAiPlain(out);
       showToast('AI summary generated');
     } catch (e) {
-      setPlain(p => p + `\n\n[AI summary unavailable: ${e.message}. The rule-based explanation above still applies.]`);
+      setAiPlain(plain + `\n\n[AI summary unavailable: ${e.message}. The rule-based explanation above still applies.]`);
     } finally { setAiBusy(false); }
   };
 
@@ -531,9 +538,10 @@ Write a short, two-paragraph plain-language explanation of what this means and t
           </div>
 
           <div className="la-actions">
-            <button className="la-btn" onClick={run}>Check eligibility</button>
+            <button className="la-btn" onClick={logScreening} disabled={!hasInput}>Check &amp; log screening</button>
             <button className="la-btn ghost" onClick={reset}>Reset</button>
           </div>
+          <div className="la-sub" style={{ marginTop: 8 }}>Results update live as you answer. Use <strong>Check &amp; log</strong> to save this screening to the log.</div>
         </div>
 
         {/* ---------- RIGHT: results ---------- */}
@@ -544,8 +552,8 @@ Write a short, two-paragraph plain-language explanation of what this means and t
             </div>
           )}
 
-          {!result ? (
-            <div className="empty-state">Fill the questionnaire and select <strong>Check eligibility</strong> to see your result, the governing NALSA provision, and a tailored document checklist.</div>
+          {!hasInput ? (
+            <div className="empty-state">Answer the questionnaire (tick a category or enter your income) to see your result, the governing NALSA provision, and a tailored document checklist — updated live.</div>
           ) : (
             <>
               <div className={`la-verdict ${verdictClass}`}>
@@ -668,8 +676,11 @@ function DocumentHelperView() {
   };
 
   const explain = async () => {
-    const g = guardrailScan(text);
-    setGuardMsg(g.blocked ? g.reason : '');
+    // Note: the advice guardrail screens user *requests* (Eligibility problem box,
+    // Legal Q&A). It is intentionally NOT run on an uploaded document's body — a
+    // legal notice naturally contains words like "appeal" or "defence", which are
+    // not the user asking for advice. The DOC_SYSTEM prompt keeps output to
+    // explanation only.
     if (!text.trim()) { setErr('Paste or upload a document first.'); return; }
     setErr(''); setBusy(true); setOut('');
     const clipped = text.slice(0, 8000);

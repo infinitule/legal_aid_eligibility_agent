@@ -8,7 +8,11 @@
 #   - Python 3.8+                         (for serve.py)
 #   - Node.js 18+                         (only if you edit src_app.jsx and rebuild)
 #   - Ollama                              https://ollama.com
-#       ollama pull qwen3.5:0.8b          # default, ~1 GB
+#       ollama pull qwen3.5:0.8b          # default chat model, ~1 GB
 #       ollama pull llama3.1              # recommended, better explanations
+#       ollama pull nomic-embed-text      # embeddings for the Legal Q&A RAG
+#
+# BUILD THE RAG INDEX (one-time, or after editing data/corpus):
+#       python3 build_rag.py              # writes data/rag_index.json  (stdlib only)
 #
 # There is intentionally nothing to `pip install`.

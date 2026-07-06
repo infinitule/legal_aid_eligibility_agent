@@ -42,7 +42,8 @@ Ceilings are flagged as *indicative* — they vary by state and are revised peri
 - **Deterministic core (software logic).** Eligibility and the checklist are pure functions — no model in the decision path. This is the correct engineering choice for a sensitive legal domain: the output is repeatable, auditable, and unit-tested.
 - **AI component (local LLM via Ollama).**
   1. *Plain-language rephrasing* of the rules-engine verdict (system prompt pins it to 6th-grade reading level, supportive tone, no advice, and it is **given** the verdict to explain — it cannot overturn it).
-  2. *Document Helper* — extracts text from an uploaded PDF/DOCX notice and asks the model to explain what the document is, what it asks, any deadline, and what to gather. This is the RAG-style "retrieval over provided document" component.
+  2. *Document Helper* — extracts text from an uploaded PDF/DOCX notice and asks the model to explain what the document is, what it asks, any deadline, and what to gather.
+  3. *Offline vector RAG (Legal Q&A)* — a curated corpus of NALSA / LSA-Act reference notes (`data/corpus/`) is chunked and embedded locally with `nomic-embed-text` (768-dim) into `data/rag_index.json` by `build_rag.py`. At query time the question is embedded, the top-k passages are selected by cosine similarity **in the browser**, and the local model answers grounded in and **citing** those passages. Retrieved sources and similarity scores are shown for transparency. This is the assignment's "RAG over legal aid docs" component, implemented fully on-device.
 - **Why AI here is useful, not decorative.** The hard part for a real user is *understanding* — turning "ELIGIBLE under S.12(c)" and a legal notice into words they can act on. That is exactly a language task, and it is fenced so it cannot make an unsafe eligibility claim.
 
 ## 5. Output Explanation (simple English)
@@ -71,7 +72,7 @@ See `docs/limitations_and_responsible_use.md`. Headlines: indicative-only, not l
 | Eligibility questionnaire | Questionnaire on the Eligibility tab |
 | Map to rules from provided documents | Deterministic S.12 rules engine over `/data` reference tables |
 | Document checklist | `buildChecklist` — core + category + matter |
-| RAG over legal aid docs | Document Helper (text extraction + LLM explanation) |
+| RAG over legal aid docs | Legal Q&A tab — true vector RAG (local `nomic-embed-text` embeddings + cosine retrieval + cited, grounded answers) over the `data/corpus` NALSA notes; plus the Document Helper for single-document explanation |
 | Legal-advice guardrail | `guardrailScan` + refusal + human handoff |
 | Logs / evaluation sheet | localStorage log + JSON export + 7-scenario test suite |
 | Keep humans in control | Verdict is indicative; DLSA/PLV decides; advice refused |

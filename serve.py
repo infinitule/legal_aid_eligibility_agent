@@ -16,6 +16,10 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         super().__init__(*args, directory=ROOT, **kwargs)
 
 
-with socketserver.TCPServer(("127.0.0.1", PORT), Handler) as httpd:
+class Server(socketserver.TCPServer):
+    allow_reuse_address = True  # avoid "Address already in use" on quick restarts
+
+
+with Server(("127.0.0.1", PORT), Handler) as httpd:
     print(f"Serving {ROOT} at http://localhost:{PORT}")
     httpd.serve_forever()

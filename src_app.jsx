@@ -57,6 +57,25 @@ async function askModel(userMsg, systemMsg = "", maxTokens = 800) {
   return text;
 }
 
+// ---- Local embeddings + vector retrieval (offline RAG) --------------------
+const EMBED_MODEL = "nomic-embed-text";
+async function embedQuery(text) {
+  const res = await fetch("http://localhost:11434/api/embed", {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ model: EMBED_MODEL, input: text }),
+  });
+  const d = await res.json().catch(() => ({}));
+  if (d.error) throw new Error(typeof d.error === "string" ? d.error : "Embedding error");
+  const e = d.embeddings || d.embedding;
+  if (!e) throw new Error("No embedding returned (is '" + EMBED_MODEL + "' pulled?)");
+  return Array.isArray(e[0]) ? e[0] : e;
+}
+function cosineSim(a, b) {
+  let s = 0, na = 0, nb = 0;
+  for (let i = 0; i < a.length; i++) { s += a[i] * b[i]; na += a[i] * a[i]; nb += b[i] * b[i]; }
+  return s / (Math.sqrt(na) * Math.sqrt(nb) + 1e-9);
+}
+
 async function extractText(file) {
   const n = file.name.toLowerCase();
   if (n.endsWith(".docx")) {
@@ -705,7 +724,7 @@ function AboutView() {
           <h3 style={{ marginTop:18 }}>Who it helps</h3>
           <div className="prose">Applicants and the Para-Legal Volunteers (PLVs) who do intake at District Legal Services Authorities — as a fast, consistent first screening before a human takes over.</div>
           <h3 style={{ marginTop:18 }}>Data / reference source</h3>
-          <div className="prose">NALSA reference material — <strong>Section 12</strong> categories of the Legal Services Authorities Act, 1987 and indicative state income ceilings (nalsa.gov.in). Ceilings are encoded as indicative starter values that the user verifies with their SLSA/DLSA.</div>
+          <div className="prose">NALSA reference material — <strong>Section 12</strong> categories of the Legal Services Authorities Act, 1987 and indicative state income ceilings (nalsa.gov.in). Ceilings are encoded as indicative starter values that the user verifies with their SLSA/DLSA. A curated corpus of reference notes (in <code>data/corpus</code>) is embedded locally to power the grounded <strong>Legal Q&amp;A</strong>.</div>
         </div>
 
         <div className="la-panel">
@@ -714,10 +733,127 @@ function AboutView() {
             <strong>1. Deterministic rules engine.</strong> Eligibility is decided by code, not the model — Section 12(a)–(g) categories qualify regardless of income; income only decides when no category applies. This makes the verdict correct and repeatable, and it's covered by built-in test scenarios.<br/><br/>
             <strong>2. Document checklist builder.</strong> Generates a checklist tailored to the applicant's category and matter type.<br/><br/>
             <strong>3. AI layer (local model).</strong> The model only <em>rephrases</em> the rules-engine verdict into plain, supportive language, and explains uploaded legal documents. It never decides eligibility.<br/><br/>
-            <strong>4. Legal-advice guardrail.</strong> Requests for case strategy or outcome predictions are detected and refused, with a hand-off to a human lawyer.
+            <strong>4. Offline vector RAG (Legal Q&amp;A).</strong> A corpus of NALSA / LSA-Act reference notes is chunked and embedded locally with <em>nomic-embed-text</em>. A question is embedded, matched by cosine similarity to the most relevant passages, and answered by the local model <em>grounded in and citing those passages</em> — fully on-device.<br/><br/>
+            <strong>5. Legal-advice guardrail.</strong> Requests for case strategy or outcome predictions are detected and refused, with a hand-off to a human lawyer.
           </div>
           <h3 style={{ marginTop:18 }}>Responsible use & limitations</h3>
           <div className="prose">This is an <strong>indicative screening tool, not legal advice</strong>. Income ceilings vary by state and change over time. The final decision always rests with the Legal Services Authority. The AI explanation can occasionally be imperfect — the deterministic verdict and citations are the source of truth. Runs fully offline on a local model, so sensitive intake data stays on the user's device.</div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ============================================================
+// VIEW 3 — LEGAL Q&A (offline vector RAG over the NALSA corpus)
+// ============================================================
+const RAG_SYSTEM = "You are a legal-aid information assistant for India's NALSA system. Answer ONLY using the numbered reference passages provided. Cite the passages you rely on like [1], [2]. If the answer is not in the passages, say you do not have that information and suggest contacting the District Legal Services Authority (DLSA). Use plain, supportive language at a 6th-grade reading level. Do NOT give case-specific legal advice or predict outcomes. End by noting that a Legal Services Authority makes the final decision.";
+
+const RAG_SAMPLES = [
+  "Does a woman with a high income qualify for free legal aid?",
+  "What documents should I carry to apply at the DLSA?",
+  "Is there any court fee in a Lok Adalat?",
+  "What help is available for a victim of trafficking?",
+];
+
+function RagView() {
+  const [index, setIndex] = useState(null);
+  const [loadErr, setLoadErr] = useState('');
+  const [q, setQ] = useState('');
+  const [answer, setAnswer] = useState('');
+  const [sources, setSources] = useState([]);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState('');
+  const [guardMsg, setGuardMsg] = useState('');
+
+  useEffect(() => {
+    fetch('data/rag_index.json')
+      .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(setIndex)
+      .catch(e => setLoadErr('Could not load the knowledge base (data/rag_index.json). Run: python3 build_rag.py  · ' + e.message));
+  }, []);
+
+  const ask = async (question) => {
+    const query = (question != null ? question : q).trim();
+    if (question != null) setQ(query);
+    if (!query) { setErr('Type a question first.'); return; }
+    if (!index) { setErr('Knowledge base not loaded yet.'); return; }
+    const g = guardrailScan(query);
+    setGuardMsg(g.blocked ? g.reason : '');
+    setErr(''); setBusy(true); setAnswer(''); setSources([]);
+    try {
+      const qv = await embedQuery(query);
+      const scored = index.chunks
+        .map(c => ({ c, score: cosineSim(qv, c.vector) }))
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 4);
+      setSources(scored.map((s, i) => ({ n: i + 1, score: s.score, source: s.c.source, section: s.c.section, text: s.c.text })));
+      const context = scored.map((s, i) => `[${i + 1}] (${s.c.source})\n${s.c.text}`).join('\n\n');
+      const prompt = `Reference passages:\n${context}\n\nQuestion: ${query}\n\nAnswer using only the passages above, citing them like [1], [2].`;
+      const res = await askModel(prompt, RAG_SYSTEM, 700);
+      setAnswer(res);
+      showToast('Answer grounded in ' + scored.length + ' passages');
+    } catch (ex) {
+      setErr(ex.message || 'Retrieval/model error.');
+    } finally { setBusy(false); }
+  };
+
+  return (
+    <>
+      <div className="view-header">
+        <h1 className="view-title">Legal <em>Q&amp;A</em></h1>
+        <div className="view-meta">
+          <div><strong>Offline RAG</strong> · local embeddings</div>
+          <div>{index ? `${index.count} passages · ${EMBED_MODEL}` : 'loading…'}</div>
+        </div>
+      </div>
+
+      <div className="la-guard">
+        <strong>Grounded answers, not legal advice.</strong>&nbsp; This answers general questions about legal aid using a local knowledge base of NALSA / Legal Services Authorities Act reference notes. Every answer cites the passages it used. It runs fully on-device (local embeddings + local model) and does not give case-specific advice.
+      </div>
+
+      {loadErr && <div className="la-guard block"><strong>Knowledge base not loaded:</strong>&nbsp; {loadErr}</div>}
+
+      <div className="la-grid">
+        <div className="la-panel">
+          <h3>Ask a question</h3>
+          <div className="la-sub">Questions about eligibility, documents, how to apply, schemes, or Lok Adalats.</div>
+          <div className="la-field">
+            <textarea className="la-textarea" value={q} onChange={e => setQ(e.target.value)}
+                      placeholder="e.g. What documents do I need to apply for free legal aid?" />
+          </div>
+          <div className="la-actions" style={{ marginBottom: 10 }}>
+            <button className="la-btn" onClick={() => ask()} disabled={busy || !index}>{busy ? 'Retrieving…' : 'Ask'}</button>
+            <button className="la-btn ghost" onClick={() => { setQ(''); setAnswer(''); setSources([]); setErr(''); setGuardMsg(''); }}>Clear</button>
+          </div>
+          <div className="la-sub">Try:</div>
+          <div>
+            {RAG_SAMPLES.map((s, i) => (
+              <div key={i} className="la-logrow" style={{ cursor: 'pointer' }} onClick={() => ask(s)}>→ {s}</div>
+            ))}
+          </div>
+          {err && <div className="la-guard block" style={{ marginTop: 12 }}><strong>Error:</strong>&nbsp; {err}</div>}
+        </div>
+
+        <div className="la-panel">
+          <h3>Answer</h3>
+          <div className="la-sub">Generated by your local model, grounded in the retrieved passages.</div>
+          {guardMsg && <div className="la-guard block"><strong>Note:</strong>&nbsp; {guardMsg} I'll answer the general question from the reference notes, but for advice on your specific case please see a DLSA lawyer.</div>}
+          {answer
+            ? <div className="prose" style={{ whiteSpace: 'pre-wrap', marginBottom: 16 }}>{answer}</div>
+            : <div className="empty-state">Ask a question to get an answer grounded in the NALSA reference notes.</div>}
+
+          {sources.length > 0 && (
+            <>
+              <div className="section-sub" style={{ marginTop: 4, marginBottom: 8 }}>Retrieved sources (transparency)</div>
+              {sources.map(s => (
+                <div key={s.n} className="la-clgroup">
+                  <div className="la-clhead">[{s.n}] {s.source} · <span className="la-cite">similarity {s.score.toFixed(3)}</span></div>
+                  <div className="la-why" style={{ margin: 0 }}>{s.text.slice(0, 260)}{s.text.length > 260 ? '…' : ''}</div>
+                </div>
+              ))}
+            </>
+          )}
         </div>
       </div>
     </>
@@ -732,6 +868,7 @@ function App() {
 
   const NAV = [
     { id: 'screening', icon: '✚', label: 'Eligibility' },
+    { id: 'qa',        icon: '?', label: 'Legal Q&A' },
     { id: 'documents', icon: '❖', label: 'Document Helper' },
     { id: 'about',     icon: 'ℹ', label: 'About' },
   ];
@@ -766,6 +903,7 @@ function App() {
 
       <main className="main">
         {view === 'screening' && <LegalAidView />}
+        {view === 'qa' && <RagView />}
         {view === 'documents' && <DocumentHelperView />}
         {view === 'about' && <AboutView />}
       </main>

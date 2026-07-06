@@ -1,0 +1,35 @@
+group,key,document,why
+core,all,Completed Legal Services Authority application form,The prescribed NALSA / SLSA intake form
+core,all,Proof of identity - Aadhaar / Voter ID / Passport / Driving Licence,Confirms applicant identity
+core,all,Proof of residence / address,Establishes which DLSA has jurisdiction
+core,all,Two recent passport-size photographs,Attached to the application
+core,all,Self-declaration / affidavit of facts and eligibility,Sworn statement supporting the application
+category,scst,Caste certificate (SC/ST),Required to claim eligibility under S.12(a)
+category,child,Proof of age / birth certificate,Confirms the applicant is a child - S.12(c)
+category,disability,Disability certificate (UDID card),Required for eligibility under S.12(d)
+category,disaster,FIR / official certificate of the incident,Confirms victim status under S.12(e)
+category,trafficking,FIR / rescue or rehabilitation record,Confirms victim status under S.12(b)
+category,workman,Employment proof / ESI card / wage slip,Confirms industrial-workman status - S.12(f)
+category,custody,Custody reference from jail / home authority,Confirms person-in-custody status - S.12(g)
+category,senior,Age proof showing 60+ years,For senior-citizen state schemes
+category,income,Income certificate / BPL or ration card / affidavit of income,Supports income-based eligibility under S.12(h)
+matter,criminal,Copy of FIR / charge-sheet,Identifies the case against you
+matter,criminal,Bail order / arrest memo (if any),Shows current custody status
+matter,criminal,Short written summary of the facts,Helps the legal-aid lawyer prepare
+matter,family,Marriage certificate / proof of relationship,Establishes the relationship
+matter,family,Any DV complaint or protection-order copies,Records prior proceedings
+matter,family,Children's birth certificates (if relevant),For maintenance or custody claims
+matter,family,Proof of respondent's income (if known),For computing maintenance
+matter,property,Title deed / sale agreement / lease,Establishes your property interest
+matter,property,Mutation entries / tax receipts,Shows possession or ownership record
+matter,property,Prior notices or correspondence,Background of the dispute
+matter,labour,Appointment letter / employee ID,Proves the employment relationship
+matter,labour,Salary slips / wage record,Quantifies the claim
+matter,labour,Termination / suspension letter (if any),The action being challenged
+matter,consumer,Bill / invoice / receipt,Proof of the transaction
+matter,consumer,Warranty / guarantee card,Basis of the claim
+matter,consumer,Correspondence with the seller,Shows the grievance was raised
+matter,welfare,Relevant scheme / pension document,Identifies the benefit claimed
+matter,welfare,Rejection / non-payment communication,The grievance being raised
+matter,welfare,Bank passbook / account proof,For disbursal of the benefit
+matter,other,Any documents related to your problem,The intake officer will identify specifics

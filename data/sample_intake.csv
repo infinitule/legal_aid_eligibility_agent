@@ -1,0 +1,14 @@
+# Synthetic starter data - fictional applicants used as validation scenarios.
+# These are NOT real people. They mirror the built-in test suite in the app
+# (LA_SCENARIOS) and exercise every branch of the eligibility rules engine.
+id,categories,annual_income_inr,forum,matter,expected_status,note
+1,woman,500000,Delhi,family,eligible,Category (a)-(g) qualifies regardless of income even though income exceeds Delhi ceiling
+2,scst,1200000,Other State (default),property,eligible,SC/ST is income-blind under S.12(a)
+3,,200000,Other State (default),consumer,eligible,No category but income within default 300000 ceiling under S.12(h)
+4,,800000,Delhi,property,no,No category and income above Delhi 100000 ceiling
+5,senior,1000000,Other State (default),welfare,likely,Senior citizen is a state-scheme category - confirm with SLSA
+6,,,Other State (default),other,review,No income entered and no category - needs more information
+7,custody,,Other State (default),criminal,eligible,Person in custody is income-blind under S.12(g)
+8,woman;disability,150000,Maharashtra,family,eligible,Multiple categories - both S.12(c) and S.12(d) apply
+9,,300000,Other State (default),labour,eligible,Income exactly at the default ceiling boundary (<= is eligible)
+10,,300001,Other State (default),labour,no,One rupee above the default ceiling - not income-eligible

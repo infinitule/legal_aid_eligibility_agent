@@ -1,0 +1,14 @@
+# Legal Aid Eligibility & Document Preparation Agent
+# ---------------------------------------------------
+# This project has NO Python pip dependencies — the local web server uses only
+# the Python 3 standard library (http.server), and the app's JS libraries
+# (React, Babel, mammoth, pdf.js) are vendored in /vendor.
+#
+# RUNTIME REQUIREMENTS (install outside pip):
+#   - Python 3.8+                         (for serve.py)
+#   - Node.js 18+                         (only if you edit src_app.jsx and rebuild)
+#   - Ollama                              https://ollama.com
+#       ollama pull qwen3.5:0.8b          # default, ~1 GB
+#       ollama pull llama3.1              # recommended, better explanations
+#
+# There is intentionally nothing to `pip install`.

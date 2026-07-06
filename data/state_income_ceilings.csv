@@ -1,0 +1,10 @@
+forum,annual_income_ceiling_inr,note
+Supreme Court (SCLSC),900000,SCLSC ceiling for legal aid at the Supreme Court (indicative)
+Delhi,100000,Indicative state ceiling - verify with DSLSA
+Maharashtra,300000,Indicative state ceiling - verify with MSLSA
+Karnataka,100000,Indicative state ceiling - verify with KSLSA
+Tamil Nadu,300000,Indicative state ceiling - verify with TNSLSA
+Uttar Pradesh,100000,Indicative state ceiling - verify with UPSLSA
+West Bengal,100000,Indicative state ceiling - verify with WBSLSA
+Rajasthan,150000,Indicative state ceiling - verify with RSLSA
+Other State (default),300000,Default fallback ceiling used when a specific state is not listed

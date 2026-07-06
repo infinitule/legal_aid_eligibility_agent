@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "capstone",
+      "runtimeExecutable": "/usr/bin/python3",
+      "runtimeArgs": ["/Users/f1thkdmlk24538/Desktop/HIMSHIKHAR CLASSES/JUN 30/CAPSTONE/serve.py"],
+      "port": 8000
+    }
+  ]
+}

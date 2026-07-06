@@ -1,0 +1,11 @@
+id,label,citation,basis,income_blind
+scst,Member of a Scheduled Caste or Scheduled Tribe,S.12(a),category,yes
+trafficking,Victim of human trafficking or begar (forced labour),S.12(b) / Art.23,category,yes
+woman,A woman,S.12(c),category,yes
+child,A child (under 18 years),S.12(c),category,yes
+disability,A person with disability,S.12(d),category,yes
+disaster,Victim of mass disaster / ethnic or caste violence / flood / drought / earthquake / industrial disaster,S.12(e),category,yes
+workman,An industrial workman,S.12(f),category,yes
+custody,A person in custody (jail / protective or juvenile home / psychiatric facility),S.12(g),category,yes
+senior,A senior citizen,State scheme,scheme,no
+transgender,A transgender person,State scheme,scheme,no

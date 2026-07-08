@@ -28,6 +28,34 @@
 
 ---
 
+<div align="center">
+
+## ⚡ Instant launch — one click, zero setup
+
+</div>
+
+> ### 🖱️ &nbsp; Just **double-click [`start.command`](start.command)**
+>
+> It does everything for you — starts the local AI engine, checks the models, serves the app, and opens it in your browser:
+>
+> ```text
+>    ╔══════════════════════════════════════════════════════════╗
+>    ║      ⚖️   LEGAL AID ELIGIBILITY  &  DOCUMENT AGENT        ║
+>    ║          NALSA · runs 100% offline · no API key          ║
+>    ╚══════════════════════════════════════════════════════════╝
+>    [1/4] Starting the local AI engine (Ollama)…      ✓
+>    [2/4] Checking local models…                      ✓
+>    [3/4] Serving the app at http://localhost:8000 …  ✓
+>    [4/4] Opening the app in your browser…            ✓
+>    ✓  Ready!   Open →  http://localhost:8000/
+> ```
+>
+> **No terminal. No config. No API keys.** Prefer manual? See [Run it](#-run-it) below.
+>
+> <sub>First run: if macOS says the file is blocked, **right-click → Open** once (or run `chmod +x start.command`).</sub>
+
+---
+
 ## ✨ What it does
 
 | | Feature | How |

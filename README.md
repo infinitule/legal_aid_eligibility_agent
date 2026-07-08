@@ -5,7 +5,7 @@
 **An offline AI agent that tells a citizen whether they qualify for free legal aid in India, cites the governing law, and builds their document checklist — running entirely on a local model.**
 
 ![Runs](https://img.shields.io/badge/Runs-100%25%20Offline-2d6a4f?style=for-the-badge)
-![LLM](https://img.shields.io/badge/LLM-Ollama%20(local)-8b0000?style=for-the-badge)
+![LLM](https://img.shields.io/badge/LLM-gemma4%20(local%20%C2%B7%20Ollama)-8b0000?style=for-the-badge)
 ![API key](https://img.shields.io/badge/API%20key-NONE-b08d3c?style=for-the-badge)
 ![RAG](https://img.shields.io/badge/RAG-vector%20%C2%B7%20nomic--embed--text-6a4c93?style=for-the-badge)
 

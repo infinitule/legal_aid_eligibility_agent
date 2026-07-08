@@ -10,3 +10,6 @@ scratchpad/
 AutoGen_Module 12.pptx.pdf
 _Capstone_Project_Agentic_AI.pdf
 AAI_HIMSHIKHAR_2026_CP_July_2026-main/
+
+# Local editor/preview config (machine-specific paths)
+.claude/

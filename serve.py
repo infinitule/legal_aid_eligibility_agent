@@ -5,7 +5,7 @@ import os
 import http.server
 import socketserver
 
-ROOT = "/Users/f1thkdmlk24538/Desktop/HIMSHIKHAR CLASSES/JUN 30/CAPSTONE"
+ROOT = os.path.dirname(os.path.abspath(__file__))  # the folder this script lives in
 PORT = 8000
 
 os.chdir(ROOT)

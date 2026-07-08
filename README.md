@@ -109,9 +109,11 @@ The agent runs on **any** local Ollama model — pick it live in the sidebar dro
 |---|---|---|
 | `qwen3.5:0.8b` | ~1 GB | A **reasoning ("thinking") model**. At 0.8 B it spends its token budget on a hidden chain-of-thought and often returns **empty or garbled** answers for our structured tasks — and its thinking mode can't be reliably disabled over the API. Kept as the *"it literally runs on a 1 GB model"* proof, not for real answers. |
 | `llama3.1` | 8 B | Clean and reliable — a solid middle option. |
-| **`gemma4:latest`** ⭐ | ~9.6 GB | **Best results for this use case, and the default.** A **direct instruction-tuned model with no thinking-mode detour**, so it emits the grounded, cited, plain-language answer straight away — exactly what a legal-aid explainer needs. |
+| **`gemma4:latest`** ⭐ | ~9.6 GB | **Best results for this use case, and the default.** A modern **encoder-free "Unified" decoder-only transformer**, and — empirically — it emits the grounded, cited, plain-language answer straight away with no thinking-mode detour, which is exactly what a legal-aid explainer needs. |
 
-> **Key design point:** the eligibility **verdict is decided by the deterministic rules engine, not the model** — so switching models never changes correctness, only the *wording* of the explanation. That's what makes it safe to run on a tiny local model.
+> **Architecture note — what "Unified" (encoder-free) means.** Most multimodal models bolt *dedicated encoders* in front of the LLM to pre-process images/audio. Gemma 4 12B "Unified" removes those encoders entirely, projecting raw image patches and audio waveforms **directly into the LLM's embedding space through lightweight linear layers**. Everything flows into a **single decoder-only transformer**, which lowers multimodal latency and lets the whole model be fine-tuned in one pass. (It is still a transformer — just encoder-free, not "transformer-less".) For this *text-only* task the practical win is its clean, direct instruction-following.
+
+> **Key design point:** the eligibility **verdict is decided by the deterministic rules engine, not the model** — so switching models never changes correctness, only the *wording* of the explanation. That's what makes it safe to run on any local model, tiny or large.
 
 ---
 

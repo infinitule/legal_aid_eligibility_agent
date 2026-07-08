@@ -1232,6 +1232,7 @@ body {
 <div id="root"></div>
 <div class="copied-toast" id="toast"></div>
 
-<script src="vendor/app.js"></script>
+<!-- Load the compiled app with a per-visit cache-buster so browsers can never serve a stale build. -->
+<script>document.write('<scr' + 'ipt src="vendor/app.js?t=' + Date.now() + '"></scr' + 'ipt>');</script>
 </body>
 </html>

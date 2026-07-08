@@ -186,7 +186,9 @@ Runtime-editable rules/ceilings · expand the RAG corpus with full NALSA circula
 ```
 
 ## 👥 Team
-_Add your name(s) here._
+- **Chandandeep Sharma**
+- **Amey Chorge**
+- **Neal Balsara**
 
 ---
 <div align="center">

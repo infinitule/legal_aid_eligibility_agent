@@ -22,7 +22,8 @@ access-to-justice domain, built on India's NALSA / Legal Services Authorities Ac
 It runs 100% offline on a local model (Ollama) — no API key, no cost, data stays on device.
 
 SLIDES (one idea each):
-1. TITLE — project name, "AAI Capstone · Access to Justice", author name [ADD NAME], and
+1. TITLE — project name, "AAI Capstone · Access to Justice", team: Chandandeep Sharma,
+   Amey Chorge, Neal Balsara, and
    the tagline: "Am I eligible for free legal aid, and what do I bring? — answered offline."
 2. PROBLEM & IMPACT — Millions in India qualify for free legal aid but don't know it or
    which documents to bring; rules (S.12 of the LSA Act 1987) are opaque and income

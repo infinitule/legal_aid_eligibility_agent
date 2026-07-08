@@ -890,11 +890,18 @@ function RagView() {
 
           {sources.length > 0 && (
             <>
-              <div className="section-sub" style={{ marginTop: 4, marginBottom: 8 }}>Retrieved sources (transparency)</div>
+              <div className="section-sub" style={{ marginTop: 4, marginBottom: 8 }}>Retrieved sources — click a filename to open the reference document</div>
               {sources.map(s => (
                 <div key={s.n} className="la-clgroup">
-                  <div className="la-clhead">[{s.n}] {s.source} · <span className="la-cite">similarity {s.score.toFixed(3)}</span></div>
-                  <div className="la-why" style={{ margin: 0 }}>{s.text.slice(0, 260)}{s.text.length > 260 ? '…' : ''}</div>
+                  <div className="la-clhead">
+                    [{s.n}]{' '}
+                    <a href={`data/corpus/${s.source}`} target="_blank" rel="noopener noreferrer" className="la-srclink">
+                      {s.source} ↗
+                    </a>
+                    {s.section ? <span className="la-cite"> · {s.section}</span> : null}
+                    <span className="la-cite"> · similarity {s.score.toFixed(3)}</span>
+                  </div>
+                  <div className="la-why" style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{s.text}</div>
                 </div>
               ))}
             </>

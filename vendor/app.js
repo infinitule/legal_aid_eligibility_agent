@@ -1242,19 +1242,27 @@ function RagView() {
       marginTop: 4,
       marginBottom: 8
     }
-  }, "Retrieved sources (transparency)"), sources.map(s => /*#__PURE__*/React.createElement("div", {
+  }, "Retrieved sources — click a filename to open the reference document"), sources.map(s => /*#__PURE__*/React.createElement("div", {
     key: s.n,
     className: "la-clgroup"
   }, /*#__PURE__*/React.createElement("div", {
     className: "la-clhead"
-  }, "[", s.n, "] ", s.source, " · ", /*#__PURE__*/React.createElement("span", {
+  }, "[", s.n, "]", ' ', /*#__PURE__*/React.createElement("a", {
+    href: `data/corpus/${s.source}`,
+    target: "_blank",
+    rel: "noopener noreferrer",
+    className: "la-srclink"
+  }, s.source, " ↗"), s.section ? /*#__PURE__*/React.createElement("span", {
     className: "la-cite"
-  }, "similarity ", s.score.toFixed(3))), /*#__PURE__*/React.createElement("div", {
+  }, " · ", s.section) : null, /*#__PURE__*/React.createElement("span", {
+    className: "la-cite"
+  }, " · similarity ", s.score.toFixed(3))), /*#__PURE__*/React.createElement("div", {
     className: "la-why",
     style: {
-      margin: 0
+      margin: 0,
+      whiteSpace: 'pre-wrap'
     }
-  }, s.text.slice(0, 260), s.text.length > 260 ? '…' : '')))))));
+  }, s.text)))))));
 }
 
 // ============================================================

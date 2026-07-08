@@ -22,7 +22,7 @@ function showToast(msg) {
 // ============================================================
 const MODEL_ENDPOINT = "http://localhost:11434/api/chat";
 const MODEL_KEY = "la_model";
-const DEFAULT_MODEL = "qwen3.5:0.8b";
+const DEFAULT_MODEL = "gemma4:latest";  // best results here; any installed model is selectable in the sidebar
 function getModel() { try { return localStorage.getItem(MODEL_KEY) || DEFAULT_MODEL; } catch { return DEFAULT_MODEL; } }
 function setModel(m) { try { localStorage.setItem(MODEL_KEY, m); } catch {} }
 

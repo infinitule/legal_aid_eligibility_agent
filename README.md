@@ -1,126 +1,192 @@
-# Legal Aid Eligibility & Document Preparation Agent
+<div align="center">
 
-> AAI Capstone · Access to Justice · Built on NALSA / Legal Services Authorities Act, 1987
-> Runs **fully offline** on a small local model (Ollama) — no API key, no cost, no data leaves the device.
+# ⚖️ Legal Aid Eligibility & Document Preparation Agent
+
+**An offline AI agent that tells a citizen whether they qualify for free legal aid in India, cites the governing law, and builds their document checklist — running entirely on a local model.**
+
+![Runs](https://img.shields.io/badge/Runs-100%25%20Offline-2d6a4f?style=for-the-badge)
+![LLM](https://img.shields.io/badge/LLM-Ollama%20(local)-8b0000?style=for-the-badge)
+![API key](https://img.shields.io/badge/API%20key-NONE-b08d3c?style=for-the-badge)
+![RAG](https://img.shields.io/badge/RAG-vector%20%C2%B7%20nomic--embed--text-6a4c93?style=for-the-badge)
+
+![Basis](https://img.shields.io/badge/Basis-Legal%20Services%20Authorities%20Act%2C%201987-1a1a1a)
+![Source](https://img.shields.io/badge/Reference-NALSA%20(S.12)-8b0000)
+![Frontend](https://img.shields.io/badge/UI-React%2018-61dafb)
+![Server](https://img.shields.io/badge/Server-Python%20stdlib-3776ab)
+![Track](https://img.shields.io/badge/Capstone-AAI%20%C2%B7%20Access%20to%20Justice-b08d3c)
+
+</div>
+
+> **Track:** AAI · **Domain:** Access to justice & support navigation · **Reference:** [NALSA](https://nalsa.gov.in/) — Legal Services Authorities Act, 1987 (Section 12)
+> Runs **fully offline** on a small local model (Ollama) — no API key, no cost, and **no applicant data ever leaves the device**.
+
+<div align="center">
+
+![Eligibility screening](screenshots/01_eligibility.png)
+
+</div>
 
 ---
 
-## 1. Project Title
-**Legal Aid Eligibility and Document Preparation Agent**
+## ✨ What it does
 
-## 2. Problem Statement
-Many citizens in India do not know whether they qualify for **free legal aid**, or which documents they must gather to apply. The governing rules — Section 12 of the Legal Services Authorities Act, 1987 and NALSA/state schemes — are hard to read, and income ceilings differ by state and change over time. People give up, miss deadlines, or pay money they cannot afford.
+| | Feature | How |
+|---|---|---|
+| ✅ | **Eligibility screening** | A short questionnaire → a **deterministic rules engine** returns an indicative verdict **with the governing NALSA citation** (e.g. `S.12(c)` for a woman, `S.12(h)` for income). |
+| 📄 | **Document checklist** | Auto-builds a checklist tailored to the applicant's category *and* matter type. |
+| 🔎 | **Legal Q&A (vector RAG)** | Ask a question → local embeddings retrieve the most relevant NALSA passages → the model answers **grounded in and citing** them, with clickable sources. |
+| 🧾 | **Document Helper** | Upload a legal notice (PDF/DOCX) → plain-language, 6th-grade explanation, **on-device**. |
+| 🛡️ | **Legal-advice guardrail** | Requests for case strategy / outcome predictions are refused with a human hand-off. |
+| 🧪 | **Validation & logs** | 7 built-in test scenarios (7/7 passing) + a JSON-exportable screening log. |
+| 🔒 | **Privacy by design** | 100% offline: vendored UI + local model. Sensitive intake data stays on the user's machine. |
 
-This agent asks a short set of eligibility questions, maps the answers to the statutory rules, gives an **indicative eligibility verdict with the exact governing provision**, and produces a **tailored document checklist** so the applicant knows exactly what to carry to their District Legal Services Authority (DLSA). It keeps a human in the loop for the final decision and refuses to give case-specific legal advice.
+---
 
-## 3. Dataset / Reference Source
-- **Reference:** NALSA reference material — <https://nalsa.gov.in/> — Section 12 categories of the Legal Services Authorities Act, 1987 and indicative state income ceilings.
-- **In this repo (`/data`):**
-  - `nalsa_section12_categories.csv` — the (a)–(g) statutory categories + state-scheme categories.
-  - `state_income_ceilings.csv` — indicative annual-income ceilings by forum/state.
-  - `document_requirements.csv` — core + category-specific + matter-specific documents.
-  - `sample_intake.csv` — **synthetic** fictional applicants used for validation (not real people).
-- Income ceilings are **indicative starter values** and are clearly flagged for verification with the applicant's SLSA/DLSA.
+## 🗺️ How it works
 
-## 4. Tools Used
-- **Frontend / agent UI:** single-page React app (React 18 UMD, vendored locally).
-- **LLM:** any local model served by **Ollama** (default `qwen3.5:0.8b`; `llama3.1` recommended for best explanations) via the native `/api/chat` endpoint.
-- **Embeddings / vector RAG:** `nomic-embed-text` (768-dim) via Ollama `/api/embed`; a prebuilt index (`data/rag_index.json`) is retrieved in-browser with cosine similarity — fully offline.
-- **Document parsing:** `mammoth` (DOCX) and `pdf.js` (PDF), vendored locally.
-- **Server:** Python standard-library `http.server` (`serve.py`) — no pip dependencies.
-- **Build:** `@babel/standalone` (vendored) compiles `src_app.jsx` → `vendor/app.js`.
-- **Storage / memory:** browser `localStorage` (screening log, model choice).
-
-## 5. Project Workflow
+```mermaid
+flowchart TD
+    A([👤 User: questionnaire / question / document]) --> B[Agent controller]
+    B --> C{Missing info?}
+    C -- yes --> D[Ask for income / category]
+    C -- no --> E
+    D --> E[🛠️ Tools & retrieval]
+    E --> E1[Rules engine: assessEligibility]
+    E --> E2[Checklist builder]
+    E --> E3[Vector RAG over NALSA corpus]
+    E1 --> F[🛡️ Legal-advice guardrail]
+    E2 --> F
+    E3 --> F
+    F --> G[[📋 Verdict + citation + checklist + grounded answer]]
+    G --> H[(🗒️ Log screening · export JSON)]
+    style G fill:#f5f1e8,stroke:#8b0000,stroke-width:2px
+    style F fill:#fbeaea,stroke:#8b0000
 ```
-User input (questionnaire / uploaded document)
-        │
-        ▼
-Agent controller  ──►  Ask missing questions (income / category)
-        │
-        ▼
-Tools / rules engine  ──►  assessEligibility()  +  buildChecklist()
-        │                    (deterministic NALSA S.12 logic)
-        ▼
-Guardrail check  ──►  guardrailScan()  refuses advice / outcome prediction
-        │
-        ▼
-Structured output:  verdict + citation + checklist + plain-language summary
-        │
-        ▼
-Log result (localStorage, exportable JSON)  +  optional AI rephrasing (local model)
+
+### System architecture
+
+```mermaid
+flowchart LR
+    UI[🖥️ React SPA] --> CTRL[Agent Controller]
+    CTRL --> RULES[⚙️ Deterministic rules engine<br/>NALSA S.12 · income ceilings]
+    CTRL --> RAG[🔎 Vector RAG]
+    CTRL --> DOC[🧾 Document Helper]
+    RAG --> EMB[(nomic-embed-text<br/>768-d index)]
+    RAG --> LLM[🧠 Local chat model<br/>Ollama /api/chat]
+    DOC --> LLM
+    RULES --> OUT[✅ Verdict + citation]
+    LLM --> OUT2[💬 Plain-language / cited answer]
+    OUT --> GUARD[🛡️ Guardrail]
+    OUT2 --> GUARD
+    GUARD --> FINAL[[Final answer + logs]]
+    style RULES fill:#e8f0e8,stroke:#2d6a4f
+    style LLM fill:#f3ecf7,stroke:#6a4c93
 ```
-See `docs/architecture.md` for the full flow and pipeline diagrams.
 
-## 6. AI / Agent / Software Component
-The AI is used **where it adds value and nowhere it could do harm**:
-- **Deterministic rules engine (software logic):** eligibility is decided by code, not the model. S.12(a)–(g) categories qualify regardless of income; income only decides when no category applies. This makes the verdict correct, repeatable, and testable.
-- **AI layer (local LLM):** *rephrases* the rules-engine verdict into plain, supportive, 6th-grade-level language, and powers the **Document Helper**, which reads an uploaded legal notice and explains it in simple words. The model **never decides eligibility**.
-- **Offline vector RAG (Legal Q&A tab):** a curated corpus of NALSA / LSA-Act reference notes (`data/corpus/`) is chunked and embedded locally with `nomic-embed-text` into `data/rag_index.json`. At query time the question is embedded, the top matching passages are found by cosine similarity in the browser, and the local model answers **grounded in and citing those passages** — with the retrieved sources shown for transparency. This is the assignment's "RAG over legal aid docs" component, done fully on-device.
-- **Legal-advice guardrail:** requests for case strategy or outcome predictions are detected and refused, with a hand-off to a human lawyer/PLV.
+### Offline vector RAG pipeline
 
-## 7. How to Run the Project
-**Prerequisites:** [Ollama](https://ollama.com) installed, and Python 3.
+```mermaid
+flowchart LR
+    C[📚 data/corpus/*.md<br/>NALSA reference notes] --> K[build_rag.py<br/>chunk + embed]
+    K -->|nomic-embed-text| I[(data/rag_index.json<br/>16 × 768-d vectors)]
+    Q[❓ User question] --> QE[Embed query]
+    I --> R[Cosine top-k<br/>in browser]
+    QE --> R
+    R --> P[Grounded prompt<br/>with cited passages]
+    P --> M[🧠 Local model]
+    M --> A([💬 Answer + clickable sources])
+```
 
-**Easiest — one click:** double-click **`start.command`** (macOS). It starts Ollama with browser access, serves the app, and opens `http://localhost:8000/`. Leave that window open while using the app.
+> The whole pipeline is on-device: the index is built once offline by `build_rag.py`; retrieval and generation at query time use only local embeddings + a local model, and **every answer cites the passages it used**.
 
-**Manual:**
+---
+
+## 🧠 Model choice — why not the tiny Qwen?
+
+The agent runs on **any** local Ollama model — pick it live in the sidebar dropdown. We benchmarked several on the plain-language + grounded-RAG tasks:
+
+| Model | Size | Verdict |
+|---|---|---|
+| `qwen3.5:0.8b` | ~1 GB | A **reasoning ("thinking") model**. At 0.8 B it spends its token budget on a hidden chain-of-thought and often returns **empty or garbled** answers for our structured tasks — and its thinking mode can't be reliably disabled over the API. Kept as the *"it literally runs on a 1 GB model"* proof, not for real answers. |
+| `llama3.1` | 8 B | Clean and reliable — a solid middle option. |
+| **`gemma4:latest`** ⭐ | ~9.6 GB | **Best results for this use case, and the default.** A **direct instruction-tuned model with no thinking-mode detour**, so it emits the grounded, cited, plain-language answer straight away — exactly what a legal-aid explainer needs. |
+
+> **Key design point:** the eligibility **verdict is decided by the deterministic rules engine, not the model** — so switching models never changes correctness, only the *wording* of the explanation. That's what makes it safe to run on a tiny local model.
+
+---
+
+## 🚀 Run it
+
+**Prerequisites:** [Ollama](https://ollama.com) and Python 3.
 
 ```bash
-# 1. Pull at least one model (small default, or the recommended one)
-ollama pull qwen3.5:0.8b       # tiny, ~1 GB  (default chat model)
-ollama pull llama3.1           # 8B, better explanations (recommended)
-ollama pull nomic-embed-text   # embeddings for the Legal Q&A RAG
+# 1. Pull models (chat + embeddings)
+ollama pull gemma4            # default chat model (best results)
+ollama pull llama3.1          # good alternative
+ollama pull nomic-embed-text  # embeddings for the Legal Q&A RAG
 
-# 2. Make sure Ollama is running (the desktop app or:)
-ollama serve
+# 2. Build the RAG index (one-time / after editing data/corpus)
+python3 build_rag.py          # writes data/rag_index.json
 
-# 3. (One-time / after editing the corpus) build the RAG index
-python3 build_rag.py           # writes data/rag_index.json
-
-# 4. Serve the app over localhost (required — see note below)
-cd legal_aid_agent
-python3 serve.py               # serves http://localhost:8000
-
-# 5. Open the app
-#    http://localhost:8000/
+# 3. Serve + open  ── easiest: double-click start.command (macOS)
+python3 serve.py              # then open http://localhost:8000/
 ```
-**Important:** open it at `http://localhost:8000/`, **not** by double-clicking `index.html`. Ollama's CORS policy rejects the `file://` origin, and browser `localStorage` also requires an `http` origin.
 
-To edit the app: change `src_app.jsx`, then `node build.js` to recompile `vendor/app.js`, then reload.
+> ⚠️ **Open it at `http://localhost:8000/`, not by double-clicking the file.** Ollama's CORS policy rejects the `file://` origin, and browser `localStorage` needs an `http` origin. If you just pulled a change and the UI looks stale, hard-reload (**⌘⇧R**).
 
-## 8. Demo Screenshots
-See `screenshots/`:
-- `01_eligibility.png` — questionnaire + verdict + citation + checklist
-- `02_validation.png` — 7/7 test scenarios passing + screening log
-- `03_document_helper.png` — plain-language explanation of an uploaded notice
-- `04_about.png` — problem, how-it-works, responsible-use
-- `05_legal_qa.png` — offline vector RAG Q&A grounded in the NALSA corpus
+To edit the app: change `src_app.jsx` → `node build.js` → reload.
 
-## 9. Results & Insights
-- The rules engine passes **7/7 built-in validation scenarios** (click *Run 7 scenarios* on the Eligibility tab; also in `data/sample_intake.csv`).
-- Verdicts always cite the governing provision (e.g. `S.12(c)` for a woman, `S.12(h)` for income-based).
-- The small default model proves the app runs on a **1 GB** local model; `llama3.1` gives noticeably cleaner plain-language output.
-- Because eligibility is deterministic, model choice never changes the verdict — only the wording of the explanation.
+---
 
-## 10. Limitations
-- Income ceilings are **indicative** and vary by state / change over time — must be verified with the SLSA/DLSA.
-- This is an **indicative screening tool, not legal advice**; the Legal Services Authority makes the final decision.
-- The AI explanation can occasionally be imperfect; the deterministic verdict + citation are the source of truth.
-- The Document Helper reads text only (image-only/scanned PDFs need OCR or pasted text).
-- Small local models are slower on CPU-only machines (a page can take a couple of minutes).
-See `docs/limitations_and_responsible_use.md` for the full notes.
+## 📸 Screenshots
 
-## 11. Future Improvements
-- Load the `/data` CSVs at runtime so non-developers can update ceilings/categories without touching code.
-- Expand the RAG corpus with full NALSA circulars and per-state rules, and add re-ranking.
-- Multilingual output (Hindi and regional languages).
-- OCR for scanned documents; auto-fill of the DLSA application form.
-- A real handoff/ticket to a PLV with the screening log attached.
+| Eligibility + checklist | Mutually-exclusive categories |
+|---|---|
+| ![](screenshots/01_eligibility.png) | ![](screenshots/06_exclusivity.png) |
+| **Legal Q&A — grounded, cited RAG** | **Validation — 7/7 scenarios** |
+| ![](screenshots/07_qa_sources.png) | ![](screenshots/02_validation.png) |
 
-## 12. Team Members
+---
+
+## 🧩 AI / agent component (where AI is used, and why)
+
+- **Deterministic core (software logic):** eligibility + checklist are pure functions — repeatable, auditable, unit-tested. The right engineering choice for a sensitive legal domain.
+- **AI layer (local LLM):** *rephrases* the rules-engine verdict into plain, supportive language; powers the **Document Helper**; and answers **Legal Q&A grounded in retrieved NALSA passages** (true vector RAG). The model **never decides eligibility**.
+- **Guardrail:** advice/outcome requests are detected and refused, with a hand-off to a human lawyer/PLV.
+
+---
+
+## 📊 Results & insights
+- Rules engine passes **7 / 7** built-in scenarios (also in `data/sample_intake.csv`).
+- Every verdict cites its governing provision; every RAG answer cites its sources (clickable).
+- Runs on a **1 GB** model as proof; `gemma4:latest` gives the cleanest explanations.
+- Because eligibility is deterministic, model choice never changes the verdict — only the wording.
+
+## ⚠️ Limitations & responsible use
+Indicative screening only — **not legal advice**; income ceilings vary by state and change over time; the Legal Services Authority makes the final decision; small local models are slower on CPU. Full notes: [`docs/limitations_and_responsible_use.md`](docs/limitations_and_responsible_use.md). In an emergency, call the **NALSA helpline 15100**.
+
+## 🔮 Future improvements
+Runtime-editable rules/ceilings · expand the RAG corpus with full NALSA circulars + per-state rules and add re-ranking · multilingual (Hindi & regional) output · OCR for scanned documents · one-click PLV hand-off with the screening log attached.
+
+## 📁 Repository structure
+```
+├── index.html            # the app shell (loads vendored libs + compiled app)
+├── src_app.jsx           # editable source  →  build.js  →  vendor/app.js
+├── build.js              # JSX → vendor/app.js (classic React runtime, no bundler)
+├── build_rag.py          # offline RAG indexer (local embeddings)
+├── serve.py              # localhost static server (stdlib, no-cache)
+├── start.command         # one-click launcher (Ollama + server + open)
+├── data/                 # NALSA reference CSVs + corpus/ + rag_index.json
+├── docs/                 # project report, architecture, responsible-use
+├── screenshots/          # working-prototype captures
+├── vendor/               # React, mammoth, pdf.js, compiled app (all local)
+└── requirements.txt
+```
+
+## 👥 Team
 _Add your name(s) here._
 
 ---
-### License / Responsible Use
-Educational capstone project. Not affiliated with NALSA. Provides indicative information only and must not be relied on as legal advice. In an emergency, call the NALSA helpline **15100**.
+<div align="center">
+<sub>Educational AAI capstone · not affiliated with NALSA · provides indicative information only, not legal advice.</sub>
+</div>
